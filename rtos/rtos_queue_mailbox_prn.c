@@ -23,17 +23,40 @@
 //
 
 #include <stdio.h>
-#include <driver/gpio.h>    
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
+#include <freertos/queue.h>
 
-void app_main(void)
-{
-    gpio_reset_pin(GPIO_NUM_5);
-    gpio_set_direction(GPIO_NUM_5, GPIO_MODE_OUTPUT);
-    
+QueueHandle_t xQueue;
+
+static void vTask1( void *pvParameters );
+static void vTask2( void *pvParameters );
+
+void app_main() {
+
+    xQueue = xQueueCreate(1, sizeof( int32_t ));
+    xTaskCreatePinnedToCore( vTask1,   "Sender", 2048, ( void * ) 1, 1, NULL, 1 );
+    xTaskCreatePinnedToCore( vTask2, "Receiver", 2048,         NULL, 1, NULL, 1 );
+    for(;;);
+}
+
+static void vTask1( void *pvParameters ){
+
+    int32_t lValueToSend = ( int32_t ) pvParameters;
+
     for(;;){
-        gpio_set_level(GPIO_NUM_5, 1);
-        for(unsigned int i=0; i<3000000; i++){}
-        gpio_set_level(GPIO_NUM_5, 0);
-        for(unsigned int i=0; i<3000000; i++){}
+        xQueueOverwrite(xQueue, &lValueToSend);
+        vTaskDelay( 2000 / portTICK_PERIOD_MS );
+    }
+}
+
+static void vTask2( void *pvParameters ){
+
+    int32_t lReceivedValue;
+
+    for(;;){
+         xQueuePeek( xQueue, &lReceivedValue, portMAX_DELAY );
+         vTaskDelay( 1000 / portTICK_PERIOD_MS );
+         printf("%ld\n",lReceivedValue);
     }
 }

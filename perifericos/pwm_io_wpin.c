@@ -22,31 +22,46 @@
 // limitations under the License.
 //
 
-#include <stdio.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
 #include <driver/gpio.h>
-#include <esp_adc/adc_oneshot.h>
-
-adc_oneshot_unit_handle_t adc_handle;
-static int valor_lido;
+#include <driver/ledc.h>
 
 void app_main(void)
 {  
+    unsigned char cnt_led=0;
 
-    adc_oneshot_unit_init_cfg_t init_config = {.unit_id = ADC_UNIT_1};
-    adc_oneshot_chan_cfg_t config = {.bitwidth = ADC_BITWIDTH_DEFAULT, 
-                                     .atten    = ADC_ATTEN_DB_12};
-    adc_oneshot_new_unit(&init_config, &adc_handle);                                     
-    adc_oneshot_config_channel(adc_handle, ADC_CHANNEL_0, &config);
+    ledc_timer_config_t ledc_timer = {
+        .speed_mode       = LEDC_LOW_SPEED_MODE,
+        .duty_resolution  = LEDC_TIMER_8_BIT,
+        .timer_num        = LEDC_TIMER_0,
+        .freq_hz          = 4000, 
+        .clk_cfg          = LEDC_AUTO_CLK
+    };
+    ledc_timer_config(&ledc_timer);
 
-    gpio_set_direction(GPIO_NUM_5, GPIO_MODE_OUTPUT);
+    ledc_channel_config_t ledc_channel = {
+        .speed_mode       = LEDC_LOW_SPEED_MODE,
+        .channel          = LEDC_CHANNEL_0,
+        .timer_sel        = LEDC_TIMER_0,
+        .intr_type        = LEDC_INTR_DISABLE,
+        .gpio_num         = GPIO_NUM_5, 
+        .duty             = 0, 
+        .hpoint           = 0
+    };
+    ledc_channel_config(&ledc_channel);
+
+    ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, 0);
+    ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0);   
 
     for(;;){
-        adc_oneshot_read(adc_handle, ADC_CHANNEL_0, &valor_lido);
-        if (valor_lido > 2000){ 
-           gpio_set_level(GPIO_NUM_5, 1); 
-        }
-        else{                
-           gpio_set_level(GPIO_NUM_5, 0); 
-        }
+      cnt_led++;
+      ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, cnt_led);
+      ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0);   
+      vTaskDelay(100/portTICK_PERIOD_MS);
     }
 }
+
+
+
+

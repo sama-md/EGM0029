@@ -23,7 +23,7 @@
 //
 
 #include <stdio.h>
-#include "driver/gpio.h"      
+#include <driver/gpio.h>      
 
 void app_main(void)
 {
@@ -33,7 +33,7 @@ void app_main(void)
     gpio_reset_pin(GPIO_NUM_5);
     gpio_set_direction(GPIO_NUM_5, GPIO_MODE_OUTPUT);
     
-    while (1) {
+    for(;;){
         int valor_lido = gpio_get_level(GPIO_NUM_4);
         gpio_set_level(GPIO_NUM_5, valor_lido);
     }

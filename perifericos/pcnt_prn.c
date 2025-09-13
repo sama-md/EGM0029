@@ -22,18 +22,38 @@
 // limitations under the License.
 //
 
-#include <stdio.h>
-#include <driver/gpio.h>    
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
+#include <driver/gpio.h>
+#include <driver/pulse_cnt.h>
 
-void app_main(void)
-{
-    gpio_reset_pin(GPIO_NUM_5);
-    gpio_set_direction(GPIO_NUM_5, GPIO_MODE_OUTPUT);
-    
+void app_main() {
+
+    pcnt_unit_config_t unit_config = {
+        .high_limit = 100, 
+        .low_limit = -100,
+    };
+    pcnt_unit_handle_t pcnt_unit = NULL;
+    pcnt_new_unit(&unit_config, &pcnt_unit);
+
+    pcnt_chan_config_t channel_config = {
+        .edge_gpio_num = GPIO_NUM_5,
+        .level_gpio_num = GPIO_NUM_4,
+    };
+    pcnt_channel_handle_t pcnt_channel = NULL;
+    pcnt_new_channel(pcnt_unit, &channel_config, &pcnt_channel);
+
+    pcnt_channel_set_edge_action(pcnt_channel, PCNT_CHANNEL_EDGE_ACTION_INCREASE, PCNT_CHANNEL_EDGE_ACTION_INCREASE);
+
+    pcnt_unit_enable(pcnt_unit);
+    pcnt_unit_clear_count(pcnt_unit);
+    pcnt_unit_start(pcnt_unit);
+
+    int count = 0;
+
     for(;;){
-        gpio_set_level(GPIO_NUM_5, 1);
-        for(unsigned int i=0; i<3000000; i++){}
-        gpio_set_level(GPIO_NUM_5, 0);
-        for(unsigned int i=0; i<3000000; i++){}
+        pcnt_unit_get_count(pcnt_unit, &count);
+        printf("%d\n",count);
+        vTaskDelay(5000 / portTICK_PERIOD_MS);
     }
 }

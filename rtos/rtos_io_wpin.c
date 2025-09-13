@@ -22,18 +22,34 @@
 // limitations under the License.
 //
 
-#include <stdio.h>
-#include <driver/gpio.h>    
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
+#include <driver/gpio.h>
 
-void app_main(void)
+void vTasknull(void *pvParameter);
+void vTaskiowpin(void *pvParameter);
+
+void app_main()
 {
-    gpio_reset_pin(GPIO_NUM_5);
-    gpio_set_direction(GPIO_NUM_5, GPIO_MODE_OUTPUT);
-    
+    xTaskCreatePinnedToCore(&vTasknull  , "null_task", 1024, NULL, 1, NULL, 0);
+    xTaskCreatePinnedToCore(&vTaskiowpin, "blink_led", 1024, NULL, 1, NULL, 0);
+}
+
+void vTasknull(void *pvParameter)
+{
     for(;;){
-        gpio_set_level(GPIO_NUM_5, 1);
-        for(unsigned int i=0; i<3000000; i++){}
-        gpio_set_level(GPIO_NUM_5, 0);
-        for(unsigned int i=0; i<3000000; i++){}
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
+    }
+}
+
+void vTaskiowpin(void *pvParameter)
+{
+    gpio_set_direction(GPIO_NUM_4, GPIO_MODE_OUTPUT);
+    BaseType_t f_led=0
+
+    for(;;){
+        gpio_set_level(GPIO_NUM_5, f_led);
+        f_led ^= 1;
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
 }

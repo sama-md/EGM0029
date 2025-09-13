@@ -23,17 +23,42 @@
 //
 
 #include <stdio.h>
-#include <driver/gpio.h>    
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
+#include <freertos/semphr.h>
+#include <driver/gpio.h>
 
-void app_main(void)
-{
-    gpio_reset_pin(GPIO_NUM_5);
-    gpio_set_direction(GPIO_NUM_5, GPIO_MODE_OUTPUT);
-    
-    for(;;){
-        gpio_set_level(GPIO_NUM_5, 1);
-        for(unsigned int i=0; i<3000000; i++){}
-        gpio_set_level(GPIO_NUM_5, 0);
-        for(unsigned int i=0; i<3000000; i++){}
-    }
+SemaphoreHandle_t xMutex;
+
+static void vTask1( void *pvParameters );
+static void vTask2( void *pvParameters );
+
+void app_main() {
+   
+   xMutex = xSemaphoreCreateMutex();
+   xTaskCreatePinnedToCore( vTask1, "Task1", 2048, NULL, 1, NULL, 1);
+   xTaskCreatePinnedToCore( vTask2, "Task2", 2048, NULL, 2, NULL, 1);
+   for(;;);
+}
+
+static void vTask1( void *pvParameters ){
+
+   for(;;){
+      if( xSemaphoreTake( xMutex, 100 / portTICK_PERIOD_MS ) == pdTRUE){
+                     // acesso ao recurso compartilhado
+         xSemaphoreGive( xMutex );
+      }
+      vTaskDelay( 100 / portTICK_PERIOD_MS );
+   }
+}
+
+static void vTask2( void *pvParameters ){
+   
+   for(;;){ 
+      if( xSemaphoreTake( xMutex, 100 / portTICK_PERIOD_MS ) == pdTRUE){
+                     // acesso ao recurso compartilhado
+         xSemaphoreGive( xMutex );
+      }
+      vTaskDelay( 100 / portTICK_PERIOD_MS );
+   }
 }

@@ -23,17 +23,50 @@
 //
 
 #include <stdio.h>
-#include <driver/gpio.h>    
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
+#include <driver/gpio.h>
 
-void app_main(void)
-{
-    gpio_reset_pin(GPIO_NUM_5);
-    gpio_set_direction(GPIO_NUM_5, GPIO_MODE_OUTPUT);
-    
-    for(;;){
-        gpio_set_level(GPIO_NUM_5, 1);
-        for(unsigned int i=0; i<3000000; i++){}
-        gpio_set_level(GPIO_NUM_5, 0);
-        for(unsigned int i=0; i<3000000; i++){}
-    }
+volatile TaskHandle_t vTask2_handle = NULL;
+
+static void vTask1( void *pvParameters );
+static void vTask2( void *pvParameters );
+
+void app_main() {
+
+   xTaskCreatePinnedToCore( vTask1, "Task1", 2048, NULL, 1,           NULL, 1);
+   xTaskCreatePinnedToCore( vTask2, "Task2", 2048, NULL, 2, &vTask2_handle, 1);
+   for(;;);
+}
+
+static void vTask1( void *pvParameters ){
+
+   uint16_t count=0;
+   BaseType_t f_led5=0;
+
+   gpio_set_direction(GPIO_NUM_5, GPIO_MODE_OUTPUT);
+   
+   for(;;){ 
+      gpio_set_level(GPIO_NUM_5, f_led5);
+      f_led5 ^= 1;
+      if (count==3){
+         xTaskNotifyGive(vTask2_handle);
+         count=0;
+      }
+      count++;
+      vTaskDelay( 1000 / portTICK_PERIOD_MS );
+   }
+}
+
+static void vTask2( void *pvParameters ){
+
+   BaseType_t f_led4=0;
+
+   gpio_set_direction(GPIO_NUM_4, GPIO_MODE_OUTPUT);
+   
+   for(;;){ 
+      ulTaskNotifyTake(pdTRUE, portMAX_DELAY); 
+      gpio_set_level(GPIO_NUM_4, f_led4);
+      f_led4 ^= 1;
+   }
 }

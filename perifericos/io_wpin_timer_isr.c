@@ -22,18 +22,35 @@
 // limitations under the License.
 //
 
-#include <stdio.h>
-#include <driver/gpio.h>    
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
+#include <driver/gpio.h>
+#include <esp_timer.h>
+
+volatile BaseType_t f_led=0;
+
+void IRAM_ATTR timer_isr(void *arg);
 
 void app_main(void)
 {
-    gpio_reset_pin(GPIO_NUM_5);
+    const esp_timer_create_args_t timer_args = {
+        .callback = &timer_isr,
+        .name = "Timer"
+    };
+    esp_timer_handle_t timer_handler;
+
+    esp_timer_create(&timer_args, &timer_handler);
+    esp_timer_start_periodic(timer_handler, 1000000);
+
     gpio_set_direction(GPIO_NUM_5, GPIO_MODE_OUTPUT);
-    
+
     for(;;){
-        gpio_set_level(GPIO_NUM_5, 1);
-        for(unsigned int i=0; i<3000000; i++){}
-        gpio_set_level(GPIO_NUM_5, 0);
-        for(unsigned int i=0; i<3000000; i++){}
+        vTaskDelay(1000/portTICK_PERIOD_MS);
     }
+}
+
+void IRAM_ATTR timer_isr(void *arg)
+{
+    gpio_set_level(GPIO_NUM_5, f_led);
+    f_led ^= 1;
 }

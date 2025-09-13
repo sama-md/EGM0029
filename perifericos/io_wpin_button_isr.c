@@ -22,18 +22,32 @@
 // limitations under the License.
 //
 
-#include <stdio.h>
-#include <driver/gpio.h>    
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
+#include <driver/gpio.h>
+
+volatile BaseType_t f_led=0;
+
+void IRAM_ATTR button_isr();
 
 void app_main(void)
 {
-    gpio_reset_pin(GPIO_NUM_5);
-    gpio_set_direction(GPIO_NUM_5, GPIO_MODE_OUTPUT);
+    gpio_set_direction(GPIO_NUM_5, GPIO_MODE_OUTPUT);   
+
+    gpio_set_direction(GPIO_NUM_10, GPIO_MODE_INPUT);         
+    gpio_set_pull_mode(GPIO_NUM_10, GPIO_PULLUP_ENABLE);
+    gpio_set_intr_type(GPIO_NUM_10, GPIO_INTR_LOW_LEVEL);
     
+    gpio_install_isr_service(0);
+    gpio_isr_handler_add(GPIO_NUM_10, button_isr, NULL);
+
     for(;;){
-        gpio_set_level(GPIO_NUM_5, 1);
-        for(unsigned int i=0; i<3000000; i++){}
-        gpio_set_level(GPIO_NUM_5, 0);
-        for(unsigned int i=0; i<3000000; i++){}
+      gpio_set_level(GPIO_NUM_5, f_led); 
+      vTaskDelay(100/portTICK_PERIOD_MS);
     }
+}
+
+void IRAM_ATTR button_isr()
+{
+    f_led ^= 1;
 }

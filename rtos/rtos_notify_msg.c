@@ -23,30 +23,52 @@
 //
 
 #include <stdio.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
 #include <driver/gpio.h>
-#include <esp_adc/adc_oneshot.h>
 
-adc_oneshot_unit_handle_t adc_handle;
-static int valor_lido;
+volatile TaskHandle_t vTask2_handle = NULL;
 
-void app_main(void)
-{  
+static void vTask1( void *pvParameters );
+static void vTask2( void *pvParameters );
 
-    adc_oneshot_unit_init_cfg_t init_config = {.unit_id = ADC_UNIT_1};
-    adc_oneshot_chan_cfg_t config = {.bitwidth = ADC_BITWIDTH_DEFAULT, 
-                                     .atten    = ADC_ATTEN_DB_12};
-    adc_oneshot_new_unit(&init_config, &adc_handle);                                     
-    adc_oneshot_config_channel(adc_handle, ADC_CHANNEL_0, &config);
+void app_main() {
 
-    gpio_set_direction(GPIO_NUM_5, GPIO_MODE_OUTPUT);
+   xTaskCreatePinnedToCore( vTask1, "Task1", 2048, NULL, 1,           NULL, 1);
+   xTaskCreatePinnedToCore( vTask2, "Task2", 2048, NULL, 2, &vTask2_handle, 1);
+   for(;;);
+}
 
-    for(;;){
-        adc_oneshot_read(adc_handle, ADC_CHANNEL_0, &valor_lido);
-        if (valor_lido > 2000){ 
-           gpio_set_level(GPIO_NUM_5, 1); 
-        }
-        else{                
-           gpio_set_level(GPIO_NUM_5, 0); 
-        }
-    }
+static void vTask1( void *pvParameters ){
+
+   uint16_t count=0;
+   uint32_t msg=0;
+   BaseType_t f_led5=0;
+
+   gpio_set_direction(GPIO_NUM_5, GPIO_MODE_OUTPUT);
+   
+   for(;;){ 
+      gpio_set_level(GPIO_NUM_5, f_led5);
+      f_led5 ^= 1;
+      if (count==3){
+         xTaskNotify(vTask2_handle, msg, eSetValueWithOverwrite );
+         count=0;
+      }
+      count++;
+      vTaskDelay( 1000 / portTICK_PERIOD_MS );
+   }
+}
+
+static void vTask2( void *pvParameters ){
+
+   uint32_t result=0;
+   BaseType_t f_led4=0;
+
+   gpio_set_direction(GPIO_NUM_4, GPIO_MODE_OUTPUT);
+   
+   for(;;){ 
+      result = ulTaskNotifyTake(pdTRUE, portMAX_DELAY); 
+      gpio_set_level(GPIO_NUM_4, f_led4);
+      f_led4 ^= 1;
+   }
 }

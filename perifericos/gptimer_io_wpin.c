@@ -24,7 +24,7 @@
 
 #include <stdio.h>
 #include <driver/gpio.h>
-#include "driver/gptimer.h"
+#include <driver/gptimer.h>
 
 void app_main(void)
 {
@@ -43,7 +43,6 @@ void app_main(void)
     gpio_set_direction(GPIO_NUM_5, GPIO_MODE_OUTPUT);
     
     for(;;){
-    
        gptimer_get_raw_count(gptimer, &count_value);
     
        if (count_value > 1000000){ 
