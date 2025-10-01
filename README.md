@@ -16,8 +16,12 @@ Este repositório contém o material de suporte utilizado na componente curricul
 - Código fonte para contar o número de pulsos na porta GPIO5 ([pcnt_prn.c](https://github.com/sama-md/EGM0029/blob/main/perifericos/pcnt_prn.c))
 - Código fonte para piscar um led na porta GPIO5 a partir da interrupção de pulso no GPIO 10 ([io_wpin_button_isr.c](https://github.com/sama-md/EGM0029/blob/main/perifericos/io_wpin_button_isr.c))
 - Código fonte para piscar um led na porta GPIO5 a partir da interrupção de timer ([io_wpin_timer_isr.c](https://github.com/sama-md/EGM0029/blob/main/perifericos/io_wpin_timer_isr.c))
+- Código fonte para implementar um eco em comunicação SPI ([spi_echo.c](https://github.com/sama-md/EGM0029/blob/main/perifericos/spi_echo.c))
+- Código fonte para implementar um eco em comunicação UART ([uart_echo.c](https://github.com/sama-md/EGM0029/blob/main/perifericos/uart_echo.c))
+- Código fonte para implementat uma comunicação master no I2C ([i2c_master.c](https://github.com/sama-md/EGM0029/blob/main/perifericos/i2c_master.c))
 
 **ESP32** introdução ao ESP-IDF FreeRTOS no ESP32-S3 em C.
+
 - Código fonte para cria task ([rtos_io_wpin.c](https://github.com/sama-md/EGM0029/blob/main/rtos/rtos_io_wpin.c))
 - Código fonte para criar fila ([rtos_queue_prn.c](https://github.com/sama-md/EGM0029/blob/main/rtos/rtos_queue_prn.c))
 - Código fonte para criar fila (mailbox) ([rtos_queue_mailbox_prn.c](https://github.com/sama-md/EGM0029/blob/main/rtos/rtos_queue_mailbox_prn.c))
